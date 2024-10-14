@@ -11,13 +11,28 @@
     </head>
     <body>
 
+    <?php
+
+    /*redirección a otras páginas.
+    Está inicializando una variable $url con el texto "http://" como parte de la construcción de una URL.$_SERVER es una superglobal en PHP que contiene información sobre el servidor y el entorno de ejecución. $_SERVER['HTTP_HOST] : Por ejemplo, si estás accediendo al sitio en www.ejemplo.com, el valor de $_SERVER['HTTP_HOST'] sería www.ejemplo.com. Si estás en un entorno de desarrollo local, podría ser localhost.Si estás en un entorno local, como en localhost, entonces $url sería algo como: http://localhost/sitioweb
+
+
+    */
+
+    $url = "http://" .$_SERVER['HTTP_HOST']. "/sitioweb"
+
+    ?>
+
+
+
+
     <nav class="navbar navbar-expand navbar-light bg-light">
         <div class="nav navbar-nav">
             <a class="nav-item nav-link active" href="#">Administrador del sitio web<span class="sr-only">(current)</span></a>
-            <a class="nav-item nav-link" href="#">Inicio</a>
-            <a class="nav-item nav-link" href="#">Libros</a>
-            <a class="nav-item nav-link" href="#">Cerrar sesión</a>
-            <a class="nav-item nav-link" href="#">Ver sitio web</a>
+            <a class="nav-item nav-link" href="<?php echo $url ."/administrador//"; ?> ">Inicio</a>
+            <a class="nav-item nav-link" href="<?php echo $url ."/administrador/seccion/productos.php"; ?>">Libros</a>
+            <a class="nav-item nav-link" href="<?php echo $url ."/administrador/seccion/cerrar.php"; ?>">Cerrar sesión</a>
+            <a class="nav-item nav-link" href="<?php ECHO $url; ?>">Ver sitio web</a>
         </div>
     </nav>
 
