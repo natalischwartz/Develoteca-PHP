@@ -14,12 +14,25 @@ las personas que se loguean podran ingresar a administrador.
 
 Es una variable global en PHP que contiene los datos enviados a través de un formulario HTML usando el método POST. Si hay datos en $_POST, significa que el formulario fue enviado y contiene información.
 La condición if ($_POST) verifica si se ha enviado un formulario (si no está vacío), lo que sería evaluado como true.
-header('Location: inicio.php');:
+header('Location: inicio.php');:*/
 
-Esta línea redirige al usuario a otra página, en este caso, inicio.php. El método header() envía encabezados HTTP al navegador, y el encabezado 'Location' se utiliza para redireccionar a otra URL.*/
+session_start();
+
+//Esta línea redirige al usuario a otra página, en este caso, inicio.php. El método header() envía encabezados HTTP al navegador, y el encabezado 'Location' se utiliza para redireccionar a otra URL.
 
 if($_POST){
-    header('Location:inicio.php');
+
+    if($_POST['usuario']=="develoteca" &&($_POST['contrasenia']=="sistema")){
+
+        $_SESSION['usuario']="ok";
+        $_SESSION['nombreUsuario']="Develoteca";
+
+        header('Location:inicio.php');
+
+    }else{
+        $mensaje="Errror: el usuario o contraseña son incorrectos";
+    }
+
 
 }
 
@@ -51,6 +64,17 @@ if($_POST){
                             Login
                         </div>
                         <div class="card-body">
+
+                        <!--vamos a imprimir el mensaje si los inputs tienen algo-->
+
+                        <?php if(isset($mensaje)){?>
+                            <div class="alert alert-danger" role="alert">
+                            <?php echo $mensaje; ?>
+                        </div>
+
+
+
+                        <?php } ?>
                             <!--el usuario y contraseña se van a enviar a index.php que va a redirecionar. los envios de datos se hacen con post-->
                             <form method="POST">
                                 <div class = "form-group">

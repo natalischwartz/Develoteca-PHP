@@ -1,3 +1,27 @@
+<?php
+//bloquear acceso 
+
+session_start(); // nos va a permitir manejar el login de nuestro siito web
+
+//si no hay usuario logueado
+if(!isset($_SESSION['usuario'])){
+
+    header("Location:../index.php");
+
+}else{
+    if($_SESSION['usuario']=='ok'){
+        $nombreUsuario=$_SESSION["nombreUsuario"];
+    }
+
+}
+
+
+
+?>
+
+
+
+
 <!doctype html>
 <html lang="en">
     <head>

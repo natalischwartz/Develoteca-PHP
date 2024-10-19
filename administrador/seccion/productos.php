@@ -35,17 +35,110 @@ switch($accion){ // cada uno de los case tienen el valor que tiene dentro value
         Esto significa que cuando la sentencia se ejecute, los valores almacenados en las variables $txtNombre y $txtImagen serán insertados en la tabla libros en las columnas nombre e imagen, respectivamente.
         */
         $sentenciaSQL->bindParam(':nombre',$txtNombre);
-        $sentenciaSQL->bindParam(':imagen',$txtImagen);
+
+      //adjuntar imagen
+
+      /*significa que estás creando una nueva instancia de la clase DateTime en PHP. Esta clase representa una fecha y hora.DateTime(): Es el constructor de la clase DateTime, que cuando se llama sin ningún parámetro, por defecto crea un objeto que representa la fecha y hora actual (según la zona horaria del servidor).$fecha: Es la variable que almacenará el objeto DateTime, que contiene la fecha y hora actual en el momento de la creación del objeto.
+      */
+      $fecha = new DateTime();
+
+
+      /*Esta línea de código utiliza un operador ternario para asignar un valor a la variable $nombreArchivo dependiendo de si se ha subido una imagen o no.
+      ($txtImagen != ""): Aquí se está verificando si la variable $txtImagen (que probablemente almacena el nombre o ruta de una imagen) no está vacía. Si contiene algún valor, significa que se ha seleccionado una imagen para subir.
+      Si $txtImagen no está vacío, se genera un nombre de archivo único concatenando la marca de tiempo actual ($fecha->getTimestamp() devuelve el número de segundos desde el 1 de enero de 1970) con el nombre del archivo original ($_FILES["txtImagen"]["name"]).
+      Esto evita posibles colisiones de nombres entre archivos al agregar la marca de tiempo (timestamp) al principio del nombre del archivo.
+      El resultado será algo como 1697285325_nombreOriginal.jpg.
+
+      Si $txtImagen está vacío, es decir, si no se ha seleccionado ninguna imagen, se asigna un nombre de archivo por defecto, en este caso "imagen.jpg".
+
+      Este código asigna un nombre único a los archivos de imagen que se suben, combinando la fecha y el nombre original del archivo.
+      */
+      $nombreArchivo = ($txtImagen != "") ? $fecha-> getTimestamp(). "_".$_FILES["txtImagen"]["name"] : "imagen.jpg";
+
+
+      
+      //Este código se encarga de mover una imagen que ha sido subida por un usuario desde una ubicación temporal en el servidor hacia un directorio definitivo en el servidor, si es que la imagen existe.
+      
+      //$tmpImagen = $_FILES["txtImagen"]["tmp_name"];: Aquí se accede a la ubicación temporal del archivo de imagen que se ha subido mediante el formulario HTML.$_FILES[$txtImagen]["tmp_name"] devuelve la ruta temporal donde se almacena el archivo en el servidor antes de ser procesado. El valor de $_FILES es un array global que PHP llena automáticamente cuando se suben archivos mediante un formulario.
+      //$txtImagen es el nombre del campo del formulario que contiene la imagen seleccionada por el usuario.
+
+      $tmpImagen = $_FILES["txtImagen"]["tmp_name"];
+
+
+      //Se está verificando si la variable $tmpImagen no está vacía. Esto significa que se está comprobando si efectivamente se ha subido una imagen y si existe una ruta temporal válida.
+      //Si no está vacía, el código dentro del if se ejecuta, lo que implica que hay un archivo que se puede mover.
+
+      if($tmpImagen!=""){
+
+        //move_uploaded_file es una función de PHP que mueve un archivo subido desde su ubicación temporal a una ubicación definitiva en el servidor.
+        move_uploaded_file($tmpImagen,"../../img/".$nombreArchivo);
+
+      }
+
+        $sentenciaSQL->bindParam(':imagen',$nombreArchivo);
         // echo $sentenciaSQL->queryString;
         $sentenciaSQL->execute();
+
+
+        header("Location:productos.php");
         break;
 
     case "Modificar":
-        echo "presionado boton modificar";
+      //es una sentencia SQL de actualización. UPDATE libros: Esta parte de la consulta indica que se va a actualizar una fila en la tabla libros. SET nombre=:nombre: Aquí se especifica que el valor de la columna nombre se actualizará con un nuevo valor que se pasa como parámetro (:nombre). WHERE id=:id: La condición WHERE indica que solo se actualizará la fila que tenga el id igual al valor del parámetro :id. De esta manera, te aseguras de que solo se modifique un registro específico de la tabla.
+
+      $sentenciaSQL =$conexion->prepare("UPDATE libros SET nombre=:nombre WHERE id=:id");
+      $sentenciaSQL->bindParam(':nombre',$txtNombre);
+      $sentenciaSQL->bindParam(':id',$txtID);
+      $sentenciaSQL->execute();
+
+
+      //vamos a modificar la imagen si el campo txtImagen no es vacío. osea tiene informacion
+
+      if($txtImagen != ""){
+
+        $fecha = new DateTime();
+        $nombreArchivo = ($txtImagen != "") ? $fecha-> getTimestamp(). "_".$_FILES["txtImagen"]["name"] : "imagen.jpg";
+        $tmpImagen = $_FILES["txtImagen"]["tmp_name"];
+
+
+        move_uploaded_file($tmpImagen,"../../img/".$nombreArchivo);
+
+
+        $sentenciaSQL =$conexion->prepare("SELECT imagen FROM libros WHERE id=:id");
+        $sentenciaSQL->bindParam(':id',$txtID);
+        $sentenciaSQL->execute();
+        //fetch(): Este método recupera una fila (un registro) del resultado de la consulta
+        $libro = $sentenciaSQL->fetch(PDO::FETCH_LAZY); //esto va a hacer posible que yo pueda cargar los datos y rellenarlos uno a uno 
+  
+        if(isset($libro["imagen"]) && ($libro["imagen"] != "imagen.jpg")){
+  
+          if(file_exists("../../img/".$libro["imagen"])){
+            unlink("../../img/".$libro["imagen"]);
+          }
+  
+        }
+
+
+
+
+        $sentenciaSQL =$conexion->prepare("UPDATE libros SET imagen=:imagen WHERE id=:id");
+        $sentenciaSQL->bindParam(':imagen',$nombreArchivo);
+        $sentenciaSQL->bindParam(':id',$txtID);
+        $sentenciaSQL->execute();
+      }
+    
+      header("Location:productos.php");
+
+
+        
         break;
         
     case "Cancelar":
-        echo "presionado boton cancelar";
+
+      //cuando cancelemos vamos a redirigir a la seccion de productos
+      header("Location:productos.php");
+
+        // echo "presionado boton cancelar";
         break;
     case "Seleccionar":
       //Selecciona los libros cuyo id coinciden con el id que se selecciono
@@ -61,13 +154,34 @@ switch($accion){ // cada uno de los case tienen el valor que tiene dentro value
 
         break;
     case "Borrar":
+
+      //borrar imagen que esta dentro de la carpeta img
+
+
+
+      $sentenciaSQL =$conexion->prepare("SELECT imagen FROM libros WHERE id=:id");
+      $sentenciaSQL->bindParam(':id',$txtID);
+      $sentenciaSQL->execute();
+      //fetch(): Este método recupera una fila (un registro) del resultado de la consulta
+      $libro = $sentenciaSQL->fetch(PDO::FETCH_LAZY); //esto va a hacer posible que yo pueda cargar los datos y rellenarlos uno a uno 
+
+      if(isset($libro["imagen"]) && ($libro["imagen"] != "imagen.jpg")){
+
+        if(file_exists("../../img/".$libro["imagen"])){
+          unlink("../../img/".$libro["imagen"]);
+        }
+
+      }
+
+
+
+      //Borrar registro 
       //Este código ejecuta una sentencia para eliminar un registro de la tabla libros en la base de datos basándose en un valor específico del campo id.La consulta DELETE FROM libros WHERE id=:id significa que se va a eliminar un registro de la tabla libros donde el campo id coincida con el valor que se va a proporcionar. Si, por ejemplo, $txtID = 3, entonces el valor 3 será el que se asigne al marcador :id. Esto hará que la consulta eliminatoria quede así: DELETE FROM libros WHERE id=3, eliminando el libro con id = 3 de la tabla libros.
 
       $sentenciaSQL =$conexion->prepare("DELETE FROM libros WHERE id=:id");
       $sentenciaSQL->bindParam(':id',$txtID);
       $sentenciaSQL->execute();
-
-        //echo "presionado boton borrar";
+      header("Location:productos.php");
         break;
 
 }
@@ -138,27 +252,44 @@ Array ( [txtID] => [txtNombre]=> php [accion] =>)
 
                 <div class = "form-group">
                     <label for="txtID">ID:</label><!--value es el prellando-->
-                    <input type="text" class="form-control" value="<?php echo $txtID; ?>" name="txtID" id="txtID"  placeholder="ID">
+                    <input type="text" required readonly class="form-control" value="<?php echo $txtID; ?>" name="txtID" id="txtID"  placeholder="ID">
                 </div>
 
                 <div class="form-group">
                     <label for="txtNombre">Nombre:</label>
-                    <input type="text" class="form-control" value="<?php echo $txtNombre ?>" name="txtNombre" id="txtNombre" placeholder="Nombre del libro">
+                    <input type="text" required class="form-control" value="<?php echo $txtNombre ?>" name="txtNombre" id="txtNombre" placeholder="Nombre del libro">
                 </div>
 
                 <div class="form-group">
                     <label for="txtImagen">Imagen:</label>
 
+                    
+
                   <?php echo $txtImagen ?>
 
-                    <input type="file" class="form-control" name="txtImagen" id="txtImagen" placeholder="Nombre del libro">
+                  <br>
+
+
+                  <?php if( $txtImagen != ""){ ?>
+
+                      <!--mostramos la imagen-->
+                      <img class="img-thumbnail rounded" src="../../img/<?php echo $txtImagen; ?>" width="50" alt="">  
+
+
+                <?php } ?>
+
+
+
+
+
+                    <input type="file"  class="form-control" name="txtImagen" id="txtImagen" placeholder="Nombre del libro">
                 </div>
 
 
                 <div class="btn-group" role="group" aria-label="">
-                    <button type="submit" name="accion" value="Agregar" class="btn btn-success">Agregar</button>
-                    <button type="submit" name="accion"  value="Modificar" class="btn btn-warning">Modificar</button>
-                    <button type="submit" name="accion" value="Cancelar" class="btn btn-info">Cancelar</button>
+                    <button type="submit" name="accion" <?php echo($accion=="Seleccionar"? "disabled":""); ?> value="Agregar" class="btn btn-success">Agregar</button>
+                    <button type="submit" name="accion"  <?php echo($accion!="Seleccionar"? "disabled":""); ?>  value="Modificar" class="btn btn-warning">Modificar</button>
+                    <button type="submit" name="accion"  <?php echo($accion!="Seleccionar"? "disabled":""); ?> value="Cancelar" class="btn btn-info">Cancelar</button>
                 </div>
 
             </form>
@@ -197,7 +328,15 @@ Array ( [txtID] => [txtNombre]=> php [accion] =>)
             <tr>
                 <td><?php echo $libro['id']; ?></td>
                 <td><?php echo $libro['nombre']; ?></td> <!--es la columna nombre de la tabla-->
-                <td><?php echo $libro['imagen']; ?></td><!--es la columna imagen de la tabla-->
+                <td>
+
+                <img class="img-thumbnail rounded" src="../../img/<?php echo $libro['imagen']; ?>" width="50" alt="">  
+                
+                
+              
+              
+              
+              </td><!--es la columna imagen de la tabla-->
                 <td>
                 
                 <form method="POST">
